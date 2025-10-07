@@ -1,0 +1,150 @@
+﻿@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@{
+    var role = HttpContextAccessor?.HttpContext?.Session?.GetString("role");
+    var username = HttpContextAccessor?.HttpContext?.Session?.GetString("username");
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - EVWebApp</title>
+
+    <!-- CoreUI CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/@@coreui/icons/css/free.min.css" rel="stylesheet">
+    <link href="~/theme/vendors/simplebar/css/simplebar.css" rel="stylesheet" />
+    <link href="~/theme/css/style.css" rel="stylesheet" />
+
+    <!-- Optional custom overrides -->
+    <link href="~/css/site.css" rel="stylesheet" />
+</head>
+
+<body>
+    @if (string.IsNullOrEmpty(role))
+    {
+        <script>
+            window.location.href = '/Auth/Login';
+        </script>
+    }
+    <div class="sidebar sidebar-dark sidebar-fixed" id="sidebar">
+        <div class="sidebar-brand d-none d-md-flex">
+            <h4 class="text-white m-3">⚡ EV System</h4>
+        </div>
+        <ul class="sidebar-nav" data-coreui="navigation" data-simplebar="">
+
+            <li class="nav-item">
+                <a class="nav-link" asp-controller="Dashboard" asp-action="Index">
+                    <i class="nav-icon cil-speedometer"></i> Dashboard
+                </a>
+            </li>
+
+            <li class="nav-title">Management</li>
+
+            @if (role == "Backoffice")
+            {
+                <!-- Only Backoffice sees User Management -->
+                <li class="nav-item">
+                    <a class="nav-link" asp-controller="User" asp-action="Index">
+                        <i class="nav-icon cil-people"></i> User Management
+                    </a>
+                </li>
+
+                <!-- EV Owner Management -->
+                <li class="nav-item">
+                    <a class="nav-link" asp-controller="EvOwner" asp-action="Index">
+                        <i class="nav-icon cil-user"></i> EV Owners
+                    </a>
+                </li>
+
+                <!-- Charging Stations -->
+                <li class="nav-item">
+                    <a class="nav-link" asp-controller="Station" asp-action="Index">
+                        <i class="nav-icon cil-factory"></i> Stations
+                    </a>
+                </li>
+
+                <!-- Bookings (view only) -->
+                <li class="nav-item">
+                    <a class="nav-link" asp-controller="Booking" asp-action="Index">
+                        <i class="nav-icon cil-calendar"></i> Bookings
+                    </a>
+                </li>
+            }
+
+            @if (role == "Station Operator")
+            {
+                <!-- Station Operator limited to these -->
+                <li class="nav-item">
+                    <a class="nav-link" asp-controller="Station" asp-action="Index">
+                        <i class="nav-icon cil-factory"></i> Stations
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" asp-controller="Booking" asp-action="Index">
+                        <i class="nav-icon cil-calendar"></i> Bookings
+                    </a>
+                </li>
+            }
+
+            <li class="nav-divider"></li>
+            <li class="nav-item">
+                <a class="nav-link" asp-controller="Auth" asp-action="Logout">
+                    <i class="nav-icon cil-account-logout"></i> Logout
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="wrapper d-flex flex-column min-vh-100 bg-light">
+        <!-- Header -->
+        <header class="header header-sticky mb-4">
+            <div class="container-fluid">
+                <button class="header-toggler px-md-0 me-md-3" type="button"
+                        onclick="@@coreui.Sidebar.getInstance(document.querySelector('#sidebar')).toggle()">
+                    <i class="icon icon-lg cil-menu"></i>
+                </button>
+                <h5 class="fw-bold">EV Charging Management</h5>
+                <ul class="header-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="icon cil-user"></i>
+                            @if (!string.IsNullOrEmpty(username))
+                            {
+                                <text>@username (@role)</text>
+                            }
+                            else
+                            {
+                                <text>@role</text>
+                            }
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </header>
+
+        <!-- Content area -->
+        <div class="body flex-grow-1 px-3">
+            <main class="container-fluid">
+                @RenderBody()
+            </main>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div><strong>EVWebApp</strong> © 2025 | Built with CoreUI</div>
+            <div class="ms-auto">Powered by <a href="https://coreui.io" target="_blank">CoreUI</a></div>
+        </footer>
+    </div>
+
+    <!-- CoreUI JS -->
+    <script src="~/theme/vendors/@@coreui/coreui/js/coreui.bundle.min.js"></script>
+    <script src="~/theme/vendors/simplebar/js/simplebar.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <!-- CoreUI already includes Bootstrap 5 CSS, but ensure JS too -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

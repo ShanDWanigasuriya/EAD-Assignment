@@ -1,0 +1,39 @@
+﻿@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="row g-4">
+    <div class="col-sm-6 col-lg-4">
+        <div class="card text-white bg-primary mb-3">
+            <div class="card-body">
+                <div class="fs-4 fw-bold">@ViewBag.TotalOwners</div>
+                <div>Registered EV Owners</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-lg-4">
+        <div class="card text-white bg-success mb-3">
+            <div class="card-body">
+                <div class="fs-4 fw-bold">@ViewBag.TotalStations</div>
+                <div>Charging Stations</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-lg-4">
+        <div class="card text-white bg-warning mb-3">
+            <div class="card-body">
+                <div class="fs-4 fw-bold">@ViewBag.TotalBookings</div>
+                <div>Total Bookings</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">Recent Activity</div>
+    <div class="card-body">
+        <p class="text-muted">This section will later show recent EV owner or booking actions.</p>
+    </div>
+</div>

@@ -1,0 +1,82 @@
+﻿@{
+    ViewData["Title"] = "EV Owners";
+}
+
+<div class="card">
+    <div class="card-header bg-dark text-white fw-bold">
+        EV Owner Management
+    </div>
+    <div class="card-body">
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success">@TempData["Success"]</div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger">@TempData["Error"]</div>
+        }
+
+        <!-- Add New Owner -->
+        <form asp-action="Add" method="post" class="row g-2 mb-4">
+            <div class="col-md-4">
+                <input type="text" name="nic" class="form-control" placeholder="NIC" required />
+            </div>
+            <div class="col-md-4">
+                <input type="text" name="fullName" class="form-control" placeholder="Full Name" required />
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Add</button>
+            </div>
+        </form>
+
+        <!-- Table -->
+        <table class="table table-striped align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>NIC</th>
+                    <th>Full Name</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var owner in Model)
+                {
+                    bool active = Convert.ToBoolean(owner["isActive"] ?? owner["IsActive"]);
+                    <tr>
+                        <td>@owner["nic"]</td>
+                        <td>@owner["fullName"]</td>
+                        <td>
+                            <span class="badge @(active ? "bg-success" : "bg-danger")">
+                                @(active ? "Active" : "Inactive")
+                            </span>
+                        </td>
+                        <td>
+                            <form asp-action="ToggleActive" method="post" class="d-inline">
+                                <input type="hidden" name="nic" value="@owner["nic"]" />
+                                <input type="hidden" name="isActive" value="@active" />
+                                <button class="btn btn-sm @(active ? "btn-outline-danger" : "btn-outline-success")">
+                                    @(active ? "Deactivate" : "Activate")
+                                </button>
+                            </form>
+
+                            <!-- Edit -->
+                            <form asp-action="Edit" method="post" class="d-inline">
+                                <input type="hidden" name="nic" value="@owner["nic"]" />
+                                <input type="text" name="fullName" value="@owner["fullName"]" class="form-control d-inline w-auto" />
+                                <button class="btn btn-sm btn-success">Update</button>
+                            </form>
+
+                            <!-- Delete -->
+                            <form asp-action="Delete" method="post" class="d-inline">
+                                <input type="hidden" name="nic" value="@owner["nic"]" />
+                                <button class="btn btn-sm btn-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

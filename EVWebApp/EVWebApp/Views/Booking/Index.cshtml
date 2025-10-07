@@ -1,0 +1,166 @@
+﻿@{
+    ViewData["Title"] = "Bookings";
+}
+
+<div class="card">
+    <div class="card-header bg-dark text-white fw-bold">
+        Booking Management
+    </div>
+
+    <div class="card-body">
+
+        @if (TempData["Message"] != null)
+        {
+            <div class="alert alert-info">@TempData["Message"]</div>
+        }
+
+        <h5 class="mb-3">Create New Booking</h5>
+        <form asp-action="Create" method="post" class="row g-3 mb-4">
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Station</label>
+                <select class="form-select" name="station" required>
+                    <option value="">-- Select Station --</option>
+                    <option>Colombo SuperCharge</option>
+                    <option>Galle RapidCharge</option>
+                    <option>Kandy GreenCharge</option>
+                </select>
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Vehicle No</label>
+                <input type="text" name="vehicleNo" class="form-control" placeholder="ABC-1234" required />
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label fw-bold">Date</label>
+                <input type="date" name="date" class="form-control" required />
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label fw-bold">Time</label>
+                <input type="time" name="time" class="form-control" required />
+            </div>
+
+            <div class="col-md-12 text-end">
+                <button type="submit" class="btn btn-primary">Submit Booking</button>
+            </div>
+        </form>
+
+        <hr />
+
+        <h5 class="mb-3">Existing Bookings</h5>
+        <table class="table table-striped align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Station</th>
+                    <th>Vehicle</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var booking in Model)
+                {
+                    var bookingDateTime = DateTime.Parse($"{booking["date"]} {booking["time"]}");
+                    bool canModify = (bookingDateTime - DateTime.Now).TotalHours >= 12;
+
+                    <tr>
+                        <td>@booking["bookingId"]</td>
+                        <td>@booking["stationName"]</td>
+                        <td>@booking["vehicleNo"]</td>
+                        <td>@booking["date"]</td>
+                        <td>@booking["time"]</td>
+                        <td>
+                            <button class="btn btn-sm btn-success"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#editModal"
+                                    data-id="@booking["bookingId"]"
+                                    data-station="@booking["stationName"]"
+                                    data-vehicle="@booking["vehicleNo"]"
+                                    data-date="@booking["date"]"
+                                    data-time="@booking["time"]"
+                            @(canModify ? "" : "disabled")>
+                                Update
+                            </button>
+
+                            <form asp-action="Cancel" method="post" class="d-inline">
+                                <input type="hidden" name="bookingId" value="@booking["bookingId"]" />
+                                <input type="hidden" name="date" value="@booking["date"]" />
+                                <input type="hidden" name="time" value="@booking["time"]" />
+                                <button class="btn btn-sm btn-danger" @(canModify ? "" : "disabled")>
+                                    Cancel
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 🔹 Edit Booking Modal -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="Update" method="post">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title" id="editModalLabel">Edit Booking</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <input type="hidden" id="editBookingId" name="bookingId" />
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Station</label>
+                        <input type="text" id="editStation" name="station" class="form-control" readonly />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Vehicle No</label>
+                        <input type="text" id="editVehicleNo" name="vehicleNo" class="form-control" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Date</label>
+                        <input type="date" id="editDate" name="date" class="form-control" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Time</label>
+                        <input type="time" id="editTime" name="time" class="form-control" required />
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const editModal = document.getElementById('editModal');
+        editModal.addEventListener('show.bs.modal', event => {
+            const button = event.relatedTarget;
+
+            const id = button.getAttribute('data-id');
+            const station = button.getAttribute('data-station');
+            const vehicle = button.getAttribute('data-vehicle');
+            const date = button.getAttribute('data-date');
+            const time = button.getAttribute('data-time');
+
+            document.getElementById('editBookingId').value = id;
+            document.getElementById('editStation').value = station;
+            document.getElementById('editVehicleNo').value = vehicle;
+            document.getElementById('editDate').value = date;
+            document.getElementById('editTime').value = time;
+        });
+    </script>
+}
