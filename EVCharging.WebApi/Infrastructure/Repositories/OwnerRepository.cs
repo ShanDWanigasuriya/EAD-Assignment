@@ -5,17 +5,38 @@ namespace EVCharging.WebApi.Infrastructure.Repositories
 {
     public class OwnerRepository : BaseRepository<Owner>
     {
-        public OwnerRepository(MongoDbService mongo) : base(mongo, "owners") { }
+        public OwnerRepository(MongoDbService mongo) : base(mongo, "owners")
+        {
+            // Ensure NIC is unique in the "owners" collection
+            var indexKeys = Builders<Owner>.IndexKeys.Ascending(x => x.NIC);
+            var indexOptions = new CreateIndexOptions { Unique = true };
+            var indexModel = new CreateIndexModel<Owner>(indexKeys, indexOptions);
+            Col.Indexes.CreateOne(indexModel);
+        }
 
         public Task<Owner?> FindByNicAsync(string nic) =>
             Col.Find(x => x.NIC == nic).FirstOrDefaultAsync();
 
-        public Task CreateAsync(Owner o) => Col.InsertOneAsync(o);
-        public Task ReplaceAsync(string id, Owner o) =>
-            Col.ReplaceOneAsync(x => x.Id == id, o);
+        public async Task CreateAsync(Owner o)
+        {
+            try
+            {
+                await Col.InsertOneAsync(o);
+            }
+            catch (MongoWriteException ex) when (ex.WriteError.Category == ServerErrorCategory.DuplicateKey)
+            {
+                throw new InvalidOperationException($"Owner with NIC {o.NIC} already exists.");
+            }
+        }
+
+        public Task UpdateByNicAsync(string nic, Owner updated) =>
+            Col.ReplaceOneAsync(x => x.NIC == nic, updated);
         public Task<List<Owner>> GetAllAsync() => Col.Find(_ => true).ToListAsync();
 
         public Task UpdateActiveByNicAsync(string nic, bool active) =>
             Col.UpdateOneAsync(x => x.NIC == nic, Builders<Owner>.Update.Set(o => o.IsActive, active));
+
+        public Task DeleteByNicAsync(string nic) =>
+            Col.DeleteOneAsync(x => x.NIC == nic);
     }
 }
