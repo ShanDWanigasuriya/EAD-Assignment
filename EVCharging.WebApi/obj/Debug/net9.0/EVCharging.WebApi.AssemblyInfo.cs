@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("EVCharging.WebApi")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3d78d61579b877f89e10396927542c073fe18f7f")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6b49501e56f3f508a1d043475820d8dfbaaaa446")]
 [assembly: System.Reflection.AssemblyProductAttribute("EVCharging.WebApi")]
 [assembly: System.Reflection.AssemblyTitleAttribute("EVCharging.WebApi")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -49,3 +49,12 @@ C:\Users\REDTECH\ev-charging\EVCharging.WebApi\obj\Debug\net9.0\refint\EVChargin
 C:\Users\REDTECH\ev-charging\EVCharging.WebApi\obj\Debug\net9.0\EVCharging.WebApi.pdb
 C:\Users\REDTECH\ev-charging\EVCharging.WebApi\obj\Debug\net9.0\EVCharging.WebApi.genruntimeconfig.cache
 C:\Users\REDTECH\ev-charging\EVCharging.WebApi\obj\Debug\net9.0\ref\EVCharging.WebApi.dll
+C:\Users\REDTECH\ev-charging\EVCharging.WebApi\obj\Debug\net9.0\EVCharging.WebApi.sourcelink.json
+C:\Users\REDTECH\ev-charging\EVCharging.WebApi\bin\Debug\net9.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+C:\Users\REDTECH\ev-charging\EVCharging.WebApi\bin\Debug\net9.0\Microsoft.IdentityModel.Abstractions.dll
+C:\Users\REDTECH\ev-charging\EVCharging.WebApi\bin\Debug\net9.0\Microsoft.IdentityModel.JsonWebTokens.dll
+C:\Users\REDTECH\ev-charging\EVCharging.WebApi\bin\Debug\net9.0\Microsoft.IdentityModel.Logging.dll
+C:\Users\REDTECH\ev-charging\EVCharging.WebApi\bin\Debug\net9.0\Microsoft.IdentityModel.Protocols.dll
+C:\Users\REDTECH\ev-charging\EVCharging.WebApi\bin\Debug\net9.0\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+C:\Users\REDTECH\ev-charging\EVCharging.WebApi\bin\Debug\net9.0\Microsoft.IdentityModel.Tokens.dll
+C:\Users\REDTECH\ev-charging\EVCharging.WebApi\bin\Debug\net9.0\System.IdentityModel.Tokens.Jwt.dll

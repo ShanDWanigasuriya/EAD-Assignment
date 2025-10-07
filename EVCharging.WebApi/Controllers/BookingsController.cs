@@ -1,4 +1,5 @@
 ﻿using EVCharging.WebApi.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EVCharging.WebApi.Controllers
@@ -9,6 +10,7 @@ namespace EVCharging.WebApi.Controllers
         private readonly BookingService _bookings;
         public BookingsController(BookingService bookings) => _bookings = bookings;
 
+        [AllowAnonymous]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateBookingRequest req)
         {
@@ -17,6 +19,7 @@ namespace EVCharging.WebApi.Controllers
             return Ok(new { id });
         }
 
+        [AllowAnonymous]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(string id, [FromBody] UpdateBookingRequest req)
         {
@@ -24,6 +27,7 @@ namespace EVCharging.WebApi.Controllers
             return Ok();
         }
 
+        [AllowAnonymous]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Cancel(string id)
         {
@@ -31,15 +35,19 @@ namespace EVCharging.WebApi.Controllers
             return Ok();
         }
 
+        [AllowAnonymous]
         [HttpGet("owner/{nic}")]
         public async Task<IActionResult> ByOwner(string nic) => Ok(await _bookings.GetByOwnerAsync(nic));
 
+        [Authorize(Roles = "Backoffice,StationOperator")]
         [HttpGet("station/{stationId}")]
         public async Task<IActionResult> ByStation(string stationId) => Ok(await _bookings.GetByStationAsync(stationId));
 
+        [Authorize(Roles = "Backoffice")]
         [HttpPatch("{id}/approve")]
         public async Task<IActionResult> Approve(string id) { await _bookings.ApproveAsync(id); return Ok(); }
 
+        [Authorize(Roles = "StationOperator")]
         [HttpPatch("{id}/complete")]
         public async Task<IActionResult> Complete(string id) { await _bookings.CompleteAsync(id); return Ok(); }
     }

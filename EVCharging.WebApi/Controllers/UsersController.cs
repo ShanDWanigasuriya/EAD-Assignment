@@ -1,4 +1,5 @@
 ﻿using EVCharging.WebApi.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EVCharging.WebApi.Controllers
@@ -10,6 +11,7 @@ namespace EVCharging.WebApi.Controllers
         private readonly AuthService _auth;
         public UsersController(UserService users, AuthService auth) { _users = users; _auth = auth; }
 
+        [Authorize(Roles = "Backoffice")]
         [HttpPost("create")]
         public async Task<IActionResult> Create([FromBody] CreateUserRequest req)
         {
@@ -20,21 +22,27 @@ namespace EVCharging.WebApi.Controllers
             return Ok(new { message = "User created." });
         }
 
+        [Authorize(Roles = "Backoffice")]
         [HttpGet]
         public async Task<IActionResult> GetAll() => Ok(await _users.GetAllAsync());
 
+        [AllowAnonymous]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest req)
         {
-            var (ok, role) = await _auth.LoginAsync(req.Username, req.Password);
-            if (!ok) return Unauthorized(new { message = "Invalid credentials." });
-            // return role + basic identity (JWT can be added later if needed)
-            return Ok(new { role });
+            var token = await _auth.LoginAsync(req.Username, req.Password);
+
+            if (token == null)
+                return Unauthorized(new { message = "Invalid credentials." });
+
+            return Ok(new { token });
         }
 
+        [Authorize(Roles = "Backoffice")]
         [HttpPatch("{id}/activate")]
         public async Task<IActionResult> Activate(string id) { await _users.SetActiveAsync(id, true); return Ok(); }
 
+        [Authorize(Roles = "Backoffice")]
         [HttpPatch("{id}/deactivate")]
         public async Task<IActionResult> Deactivate(string id) { await _users.SetActiveAsync(id, false); return Ok(); }
     }
