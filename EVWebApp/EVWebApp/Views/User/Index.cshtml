@@ -1,0 +1,83 @@
+﻿@{
+    ViewData["Title"] = "User Management";
+}
+
+<div class="card">
+    <div class="card-header bg-dark text-white fw-bold">User Management</div>
+    <div class="card-body">
+
+        @if (TempData["Message"] != null)
+        {
+            <div class="alert alert-info">@TempData["Message"]</div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger">@TempData["Error"]</div>
+        }
+
+        <h5 class="mb-3">Create New User</h5>
+        <form asp-action="Create" method="post" class="row g-3 mb-4">
+            <div class="col-md-4">
+                <input type="text" name="username" class="form-control" placeholder="Username" required />
+            </div>
+            <div class="col-md-4">
+                <input type="password" name="password" class="form-control" placeholder="Password" required />
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" name="role" required>
+                    <option value="">-- Select Role --</option>
+                    <option>Backoffice</option>
+                    <option>Station Operator</option>
+                </select>
+            </div>
+            <div class="col-md-1">
+                <button class="btn btn-primary w-100">Add</button>
+            </div>
+        </form>
+
+        <hr />
+
+        <h5 class="mb-3">Existing Users</h5>
+        <table class="table table-striped align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model)
+                {
+                    <tr>
+                        <td>@user["id"]</td>
+                        <td>@user["username"]</td>
+                        <td>@user["role"]</td>
+                        <td>
+                            <!-- Edit Form -->
+                            <form asp-action="Edit" method="post" class="d-inline">
+                                <input type="hidden" name="id" value="@user["id"]" />
+                                <input type="text" name="username" value="@user["username"]" class="form-control d-inline w-auto" />
+                                <select name="role" class="form-select d-inline w-auto">
+                                    @{
+                                        var currentRole = user["role"]?.ToString();
+                                    }
+                                    <option value="Backoffice" selected="@(currentRole == "Backoffice" ? "selected" : null)">Backoffice</option>
+                                    <option value="Station Operator" selected="@(currentRole == "Station Operator" ? "selected" : null)">Station Operator</option>
+                                </select>
+                                <button class="btn btn-sm btn-success">Update</button>
+                            </form>
+
+                            <!-- Delete Form -->
+                            <form asp-action="Delete" method="post" class="d-inline">
+                                <input type="hidden" name="id" value="@user["id"]" />
+                                <button class="btn btn-sm btn-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
