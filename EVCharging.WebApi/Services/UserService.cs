@@ -10,6 +10,10 @@ namespace EVCharging.WebApi.Services
 
         public async Task CreateAsync(string username, string password, string role)
         {
+            var allowedRoles = new[] { "Backoffice", "StationOperator" };
+            if (!allowedRoles.Contains(role, StringComparer.OrdinalIgnoreCase))
+                throw new InvalidOperationException("Invalid role. Allowed roles: Backoffice or StationOperator.");
+
             var existing = await _repo.FindByUsernameAsync(username);
             if (existing != null) throw new InvalidOperationException("Username already exists.");
 
