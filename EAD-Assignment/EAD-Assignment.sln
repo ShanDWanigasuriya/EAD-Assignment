@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36518.9 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EVWebApp", "..\EVWebApp\EVWebApp\EVWebApp.csproj", "{3422B337-0CB8-E72E-9B12-7C17F35028D8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EVCharging.WebApi", "..\EVCharging.WebApi\EVCharging.WebApi.csproj", "{6CE01991-C28C-FCE0-A0CE-02C29432A729}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3422B337-0CB8-E72E-9B12-7C17F35028D8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3422B337-0CB8-E72E-9B12-7C17F35028D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3422B337-0CB8-E72E-9B12-7C17F35028D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3422B337-0CB8-E72E-9B12-7C17F35028D8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6CE01991-C28C-FCE0-A0CE-02C29432A729}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6CE01991-C28C-FCE0-A0CE-02C29432A729}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6CE01991-C28C-FCE0-A0CE-02C29432A729}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6CE01991-C28C-FCE0-A0CE-02C29432A729}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {188F64AD-BF66-44EA-AA6E-EED26EB25226}
+	EndGlobalSection
+EndGlobal

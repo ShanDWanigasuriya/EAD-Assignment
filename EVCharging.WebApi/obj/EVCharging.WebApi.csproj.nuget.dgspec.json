@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\REDTECH\\ev-charging\\EVCharging.WebApi\\EVCharging.WebApi.csproj": {}
+    "D:\\EAD-Assignment\\EVCharging.WebApi\\EVCharging.WebApi.csproj": {}
   },
   "projects": {
-    "C:\\Users\\REDTECH\\ev-charging\\EVCharging.WebApi\\EVCharging.WebApi.csproj": {
+    "D:\\EAD-Assignment\\EVCharging.WebApi\\EVCharging.WebApi.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\REDTECH\\ev-charging\\EVCharging.WebApi\\EVCharging.WebApi.csproj",
+        "projectUniqueName": "D:\\EAD-Assignment\\EVCharging.WebApi\\EVCharging.WebApi.csproj",
         "projectName": "EVCharging.WebApi",
-        "projectPath": "C:\\Users\\REDTECH\\ev-charging\\EVCharging.WebApi\\EVCharging.WebApi.csproj",
-        "packagesPath": "C:\\Users\\REDTECH\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\REDTECH\\ev-charging\\EVCharging.WebApi\\obj\\",
+        "projectPath": "D:\\EAD-Assignment\\EVCharging.WebApi\\EVCharging.WebApi.csproj",
+        "packagesPath": "C:\\Users\\USER\\.nuget\\packages\\",
+        "outputPath": "D:\\EAD-Assignment\\EVCharging.WebApi\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\REDTECH\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\USER\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],

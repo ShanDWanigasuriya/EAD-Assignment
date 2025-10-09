@@ -1,69 +1,76 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
+using EVWebApp.Services;
 
 namespace EVWebApp.Controllers
 {
     public class EvOwnerController : Controller
     {
-        private static List<JObject> _owners = new()
-        {
-            new JObject { ["nic"] = "982545678V", ["fullName"] = "Kamal Perera", ["isActive"] = true },
-            new JObject { ["nic"] = "200045678V", ["fullName"] = "Nimali Fernando", ["isActive"] = false }
-        };
+        private readonly ApiClient _api;
+        public EvOwnerController(ApiClient api) => _api = api;
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            return View(JArray.FromObject(_owners));
+            // GET /api/owners -> array of Owners
+            var arr = await _api.Get<JArray>("/api/owners") ?? new JArray();
+            return View(arr);
         }
 
         [HttpPost]
-        public IActionResult Add(string nic, string fullName)
+        public async Task<IActionResult> Add(string nic, string fullName)
         {
             if (string.IsNullOrWhiteSpace(nic) || string.IsNullOrWhiteSpace(fullName))
+            {
                 TempData["Error"] = "All fields are required.";
-            else if (_owners.Any(o => o["nic"]?.ToString() == nic))
-                TempData["Error"] = "NIC already exists.";
-            else
-            {
-                _owners.Add(new JObject { ["nic"] = nic, ["fullName"] = fullName, ["isActive"] = true });
-                TempData["Success"] = "Owner added successfully.";
+                return RedirectToAction("Index");
             }
+
+            // API design uses /api/owners/register for create
+            var res = await _api.Post("/api/owners/register", new { nic, fullName });
+            TempData[(res.IsSuccessStatusCode ? "Success" : "Error")] =
+                res.IsSuccessStatusCode ? "Owner added." : "Failed to add owner.";
             return RedirectToAction("Index");
         }
 
         [HttpPost]
-        public IActionResult Edit(string nic, string fullName)
+        public async Task<IActionResult> Edit(string nic, string fullName)
         {
-            var owner = _owners.FirstOrDefault(o => o["nic"]?.ToString() == nic);
-            if (owner != null)
-            {
-                owner["fullName"] = fullName;
-                TempData["Success"] = "Owner updated successfully.";
-            }
+            // PUT /api/owners/{nic}
+            var res = await _api.Put($"/api/owners/{nic}", new { fullName });
+            TempData[(res.IsSuccessStatusCode ? "Success" : "Error")] =
+                res.IsSuccessStatusCode ? "Owner updated." : "Failed to update owner.";
             return RedirectToAction("Index");
         }
 
         [HttpPost]
-        public IActionResult Delete(string nic)
+        public async Task<IActionResult> Delete(string nic)
         {
-            var owner = _owners.FirstOrDefault(o => o["nic"]?.ToString() == nic);
-            if (owner != null)
+            // Not shown in swagger, but typical patterns are DELETE /api/owners/{nic}
+            // If your teammate didn’t implement DELETE, you can use a “deactivate” to simulate delete.
+            var res = await _api.Delete($"/api/owners/{nic}");
+            if (!res.IsSuccessStatusCode)
             {
-                _owners.Remove(owner);
-                TempData["Success"] = "Owner deleted successfully.";
+                // fallback: deactivate
+                await _api.Patch($"/api/owners/{nic}/deactivate", new { });
             }
+
+            TempData["Success"] = "Owner removed.";
             return RedirectToAction("Index");
         }
 
         [HttpPost]
-        public IActionResult ToggleActive(string nic, bool isActive)
+        public async Task<IActionResult> ToggleActive(string nic, bool isActive)
         {
-            var owner = _owners.FirstOrDefault(o => o["nic"]?.ToString() == nic);
-            if (owner != null)
-                owner["isActive"] = !isActive;
+            // PATCH /api/owners/{nic}/activate or /deactivate
+            var url = isActive
+                ? $"/api/owners/{nic}/deactivate"
+                : $"/api/owners/{nic}/activate";
 
-            TempData["Success"] = $"Owner {(isActive ? "deactivated" : "activated")} successfully (simulated).";
+            var res = await _api.Patch(url, new { });
+            TempData[(res.IsSuccessStatusCode ? "Success" : "Error")] =
+                res.IsSuccessStatusCode ? "Status changed." : "Failed to change status.";
             return RedirectToAction("Index");
         }
     }
 }
+
