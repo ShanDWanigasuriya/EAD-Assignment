@@ -55,8 +55,10 @@
                         <td>
                             <form asp-action="ToggleActive" method="post" class="d-inline">
                                 <input type="hidden" name="nic" value="@owner["nic"]" />
-                                <input type="hidden" name="isActive" value="@active" />
-                                <button class="btn btn-sm @(active ? "btn-outline-danger" : "btn-outline-success")">
+                                <button type="submit"
+                                        name="isActive"
+                                        value="@(active.ToString().ToLower())"
+                                        class="btn btn-sm @(active ? "btn-outline-danger" : "btn-outline-success")">
                                     @(active ? "Deactivate" : "Activate")
                                 </button>
                             </form>

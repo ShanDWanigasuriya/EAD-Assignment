@@ -1,80 +1,93 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using EVWebApp.Services;
+using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
 
 namespace EVWebApp.Controllers
 {
     public class BookingController : Controller
     {
-        public IActionResult Index()
-        {
-            // 🔹 Simulated data (to be replaced with API integration later)
-            var bookings = JArray.Parse(@"[
-                { 'bookingId': 'B001', 'stationName': 'Colombo SuperCharge', 'vehicleNo': 'ABC-1234', 'date': '2025-10-08', 'time': '09:00' },
-                { 'bookingId': 'B002', 'stationName': 'Galle RapidCharge', 'vehicleNo': 'CAB-4321', 'date': '2025-10-06', 'time': '16:30' }
-            ]");
+        private readonly ApiClient _api;
+        public BookingController(ApiClient api) => _api = api;
 
+        // 🔹 GET /Booking
+        public async Task<IActionResult> Index()
+        {
+            var stations = await _api.Get<JArray>("/api/stations") ?? new JArray();
+            var owners = await _api.Get<JArray>("/api/owners") ?? new JArray();
+            var bookings = new JArray();
+
+            // Fetch all bookings by iterating over owners
+            foreach (var o in owners)
+            {
+                var nic = (string?)o["nic"];
+                if (!string.IsNullOrEmpty(nic))
+                {
+                    var list = await _api.Get<JArray>($"/api/bookings/owner/{nic}");
+                    if (list != null)
+                        foreach (var b in list)
+                            bookings.Add(b);
+                }
+            }
+
+            // Attach readable station names
+            foreach (JObject b in bookings)
+            {
+                var sid = (string?)b["stationId"];
+                var station = stations.FirstOrDefault(s => (string?)s["id"] == sid);
+                b["stationName"] = station?["name"] ?? "Unknown Station";
+            }
+
+            ViewBag.Stations = stations;
             return View(bookings);
         }
 
-        // 🔹 Create a new booking
+        // 🔹 POST /Booking/Create
         [HttpPost]
-        public IActionResult Create(string station, string vehicleNo, DateTime date, TimeSpan time)
+        public async Task<IActionResult> Create(string station, string ownerNic, DateTime date, TimeSpan time)
         {
-            var bookingDateTime = date.Add(time);
-            var now = DateTime.Now;
+            var startUtc = date.Add(time).ToUniversalTime();
+            var endUtc = startUtc.AddHours(1);
 
-            // Validation rules
-            if ((bookingDateTime - now).TotalDays > 7)
+            var body = new
             {
-                TempData["Message"] = "❌ Booking cannot be made more than 7 days in advance.";
-            }
-            else if ((bookingDateTime - now).TotalHours < 12)
-            {
-                TempData["Message"] = "⚠️ Booking must be made at least 12 hours before the selected time.";
-            }
-            else
-            {
-                TempData["Message"] = $"✅ Booking created successfully for {station} on {date:yyyy-MM-dd} at {time}. (Simulated)";
-            }
+                ownerNic,
+                stationId = station,
+                reservationStartUtc = startUtc,
+                reservationEndUtc = endUtc
+            };
 
+            var res = await _api.Post("/api/bookings", body);
+            TempData["Message"] = res.IsSuccessStatusCode
+                ? "✅ Booking created successfully."
+                : "❌ Failed to create booking.";
             return RedirectToAction("Index");
         }
 
-        // 🔹 Update an existing booking via modal
         [HttpPost]
-        public IActionResult Update(string bookingId, string vehicleNo, DateTime date, TimeSpan time)
+        public async Task<IActionResult> Update(string bookingId, DateTime date, TimeSpan time)
         {
-            var bookingDateTime = date.Add(time);
-            var now = DateTime.Now;
+            var newStartUtc = date.Add(time).ToUniversalTime();
+            var newEndUtc = newStartUtc.AddHours(1);
 
-            if ((bookingDateTime - now).TotalHours < 12)
+            var res = await _api.Put($"/api/bookings/{bookingId}", new
             {
-                TempData["Message"] = $"⚠️ Cannot update Booking {bookingId}. Updates must be made at least 12 hours before reservation.";
-            }
-            else
-            {
-                TempData["Message"] = $"✅ Booking {bookingId} updated successfully (simulated).";
-            }
+                newStartUtc,
+                newEndUtc
+            });
 
+            TempData["Message"] = res.IsSuccessStatusCode
+                ? "✅ Booking updated successfully."
+                : "⚠️ Failed to update booking.";
             return RedirectToAction("Index");
         }
 
-        // 🔹 Cancel a booking (must be at least 12 hours before)
         [HttpPost]
-        public IActionResult Cancel(string bookingId, DateTime date, TimeSpan time)
+        public async Task<IActionResult> Cancel(string bookingId)
         {
-            var bookingDateTime = date.Add(time);
-            var now = DateTime.Now;
-
-            if ((bookingDateTime - now).TotalHours < 12)
-            {
-                TempData["Message"] = $"⚠️ Cannot cancel Booking {bookingId}. Cancellations must be done at least 12 hours before reservation.";
-            }
-            else
-            {
-                TempData["Message"] = $"🗑️ Booking {bookingId} canceled successfully (simulated).";
-            }
-
+            var res = await _api.Delete($"/api/bookings/{bookingId}");
+            TempData["Message"] = res.IsSuccessStatusCode
+                ? "🗑️ Booking canceled."
+                : "⚠️ Failed to cancel booking.";
             return RedirectToAction("Index");
         }
     }

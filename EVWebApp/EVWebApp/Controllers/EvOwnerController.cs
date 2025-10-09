@@ -28,7 +28,7 @@ namespace EVWebApp.Controllers
             // API design uses /api/owners/register for create
             var res = await _api.Post("/api/owners/register", new { nic, fullName });
             TempData[(res.IsSuccessStatusCode ? "Success" : "Error")] =
-                res.IsSuccessStatusCode ? "Owner added." : "Failed to add owner.";
+                res.IsSuccessStatusCode ? "Owner added." : "Failed to add owner.NIC already exists";
             return RedirectToAction("Index");
         }
 

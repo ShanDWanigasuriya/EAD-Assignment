@@ -1,67 +1,74 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
+using EVWebApp.Services;
 
 namespace EVWebApp.Controllers
 {
     public class UserController : Controller
     {
-        // Simulated in-memory user list
-        private static JArray _users = JArray.Parse(@"[
-            { 'id': 1, 'username': 'admin', 'role': 'Backoffice' },
-            { 'id': 2, 'username': 'operator1', 'role': 'Station Operator' }
-        ]");
+        private readonly ApiClient _api;
+        public UserController(ApiClient api) => _api = api;
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            // Allow only Backoffice role to access
+            // ✅ Only Backoffice users can access
             var role = HttpContext.Session.GetString("role");
             if (role != "Backoffice")
             {
-                TempData["Error"] = "Access denied. Only Backoffice users can manage web users.";
+                TempData["Error"] = "Access denied. Only Backoffice users can manage system users.";
                 return RedirectToAction("Index", "Dashboard");
             }
 
-            return View(_users);
+            // ✅ Fetch user list from API
+            var users = await _api.Get<JArray>("/api/users") ?? new JArray();
+            return View(users);
         }
 
         [HttpPost]
-        public IActionResult Create(string username, string password, string role)
+        public async Task<IActionResult> Create(string username, string password, string role)
         {
-            int nextId = _users.Count + 1;
-
-            _users.Add(new JObject
+            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(role))
             {
-                ["id"] = nextId,
-                ["username"] = username,
-                ["role"] = role
-            });
+                TempData["Error"] = "All fields are required.";
+                return RedirectToAction("Index");
+            }
 
-            TempData["Message"] = $"✅ User '{username}' created successfully (simulated)";
+            // ✅ POST /api/users/create
+            var res = await _api.Post("/api/users/create", new { username, password, role });
+            TempData[res.IsSuccessStatusCode ? "Success" : "Error"] =
+                res.IsSuccessStatusCode ? "User created successfully." : "Failed to create user.";
             return RedirectToAction("Index");
         }
 
         [HttpPost]
-        public IActionResult Edit(int id, string username, string role)
+        public async Task<IActionResult> Edit(string id, string username, string role)
         {
-            var user = _users.FirstOrDefault(u => (int)u["id"] == id);
-            if (user != null)
-            {
-                user["username"] = username;
-                user["role"] = role;
-                TempData["Message"] = $"✅ User '{username}' updated successfully (simulated)";
-            }
+            // Your API doesn’t support direct user edit (username/role update)
+            // You can later extend Web API for that — for now, just return a message
+            TempData["Error"] = "Editing users is not supported via API yet.";
             return RedirectToAction("Index");
         }
 
         [HttpPost]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(string id)
         {
-            var user = _users.FirstOrDefault(u => (int)u["id"] == id);
-            if (user != null)
-            {
-                _users.Remove(user);
-                TempData["Message"] = $"🗑️ User deleted successfully (simulated)";
-            }
+            // ✅ Soft delete → deactivate
+            var res = await _api.Patch($"/api/users/{id}/deactivate", new { });
+            TempData[res.IsSuccessStatusCode ? "Success" : "Error"] =
+                res.IsSuccessStatusCode ? "User deactivated successfully." : "Failed to deactivate user.";
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ToggleActive(string id, bool isActive)
+        {
+            var url = isActive
+                ? $"/api/users/{id}/deactivate"
+                : $"/api/users/{id}/activate";
+
+            var res = await _api.Patch(url, new { });
+            TempData[res.IsSuccessStatusCode ? "Success" : "Error"] =
+                res.IsSuccessStatusCode ? "User status changed." : "Failed to change status.";
             return RedirectToAction("Index");
         }
     }

@@ -7,24 +7,27 @@
         Station Management
     </div>
     <div class="card-body">
-        @if (TempData["Message"] != null)
+        @if (TempData["Success"] != null)
         {
-            <div class="alert alert-info">@TempData["Message"]</div>
+            <div class="alert alert-success">@TempData["Success"]</div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger">@TempData["Error"]</div>
         }
 
         <!-- CREATE NEW STATION -->
         <form asp-action="Add" method="post" class="row g-2 mb-4 align-items-center">
-            <div class="col"><input name="stationId" class="form-control" placeholder="Station ID" /></div>
-            <div class="col"><input name="name" class="form-control" placeholder="Station Name" /></div>
-            <div class="col"><input name="location" class="form-control" placeholder="Location" /></div>
+            <div class="col"><input name="name" class="form-control" placeholder="Station Name" required /></div>
+            <div class="col"><input name="location" class="form-control" placeholder='Location' required /></div>
             <div class="col">
-                <select name="type" class="form-select">
+                <select name="type" class="form-select" required>
                     <option value="">-- Type --</option>
                     <option value="AC">AC</option>
                     <option value="DC">DC</option>
                 </select>
             </div>
-            <div class="col"><input type="number" name="slots" min="1" class="form-control" placeholder="Slots" /></div>
+            <div class="col"><input type="number" name="slots" min="1" class="form-control" placeholder="Slots" required /></div>
             <div class="col-auto"><button class="btn btn-primary">Add</button></div>
         </form>
 
@@ -37,7 +40,7 @@
                     <th>Location</th>
                     <th>Type</th>
                     <th>Slots</th>
-                    <th>Status</th>
+                    <th>Status / Availability</th>
                     <th>Active Bookings</th>
                     <th>Actions</th>
                 </tr>
@@ -45,28 +48,41 @@
             <tbody>
                 @foreach (var s in Model)
                 {
-                    bool active = Convert.ToBoolean(s["isActive"]);
-                    int activeBookings = Convert.ToInt32(s["activeBookings"]);
+                    bool isActive = Convert.ToBoolean(s["isActive"] ?? false);
+                    int totalSlots = Convert.ToInt32(s["slots"] ?? 0);
+                    int activeBookings = Convert.ToInt32(s["activeBookings"] ?? 0);
+                    int availableNow = Convert.ToInt32(s["availableNow"] ?? totalSlots);
 
                     <tr>
-                        <td>@s["stationId"]</td>
+                        <td>@s["id"]</td>
+
                         <td>
-                            <input type="text" name="name" value="@s["name"]" class="form-control form-control-sm" form="form-@s["stationId"]" />
+                            <input type="text" name="name" value="@s["name"]"
+                                   class="form-control form-control-sm"
+                                   form="form-@s["id"]" />
                         </td>
+
+                        @* <td> <input type="text" name="location" value="@s["location"]" class="form-control form-control-sm" form="form-@s["id"]" /> </td> *@
+
                         <td>
-                            <input type="text" name="location" value="@s["location"]" class="form-control form-control-sm" form="form-@s["stationId"]" />
+                            <span>@s["displayLocation"]</span>
+                            <input type="hidden" name="location" value="@s["location"]"
+                                   form="form-@s["id"]" />
                         </td>
+
+
                         <td>
-                            <select name="type" class="form-select form-select-sm" form="form-@s["stationId"]">
-                                <option value="AC" selected="@(s["type"]!.ToString() == "AC")">AC</option>
-                                <option value="DC" selected="@(s["type"]!.ToString() == "DC")">DC</option>
+                            <select name="type" class="form-select form-select-sm"
+                                    form="form-@s["id"]">
+                                <option value="AC" selected="@(s["type"]?.ToString() == "AC")">AC</option>
+                                <option value="DC" selected="@(s["type"]?.ToString() == "DC")">DC</option>
                             </select>
                         </td>
+
+                        <td>@totalSlots</td>
+
                         <td>
-                            <input type="number" name="slots" min="1" value="@s["slots"]" class="form-control form-control-sm" form="form-@s["stationId"]" />
-                        </td>
-                        <td>
-                            @if (active)
+                            @if (isActive)
                             {
                                 <span class="badge bg-success">Active</span>
                             }
@@ -74,30 +90,45 @@
                             {
                                 <span class="badge bg-secondary">Inactive</span>
                             }
+
+                            @if (availableNow == 0)
+                            {
+                                <span class="badge bg-danger ms-2">Full Capacity</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-info ms-2">
+                                    @($"{availableNow}/{totalSlots} Slots Available")
+                                </span>
+                            }
                         </td>
+
                         <td>@activeBookings</td>
+
                         <td>
                             <div class="d-flex gap-1">
-                                <!-- Update button -->
-                                <form id="form-@s["stationId"]" asp-action="Update" method="post" class="d-inline">
-                                    <input type="hidden" name="stationId" value="@s["stationId"]" />
+                                <!-- Update -->
+                                <form id="form-@s["id"]" asp-action="Update" method="post" class="d-inline">
+                                    <input type="hidden" name="id" value="@s["id"]" />
+                                    <input type="hidden" name="slots" value="@totalSlots" />
                                     <button class="btn btn-success btn-sm">Update</button>
                                 </form>
 
-                                <!-- Activate/Deactivate -->
+                                <!-- Activate / Deactivate -->
                                 <form asp-action="ToggleStatus" method="post" class="d-inline">
-                                    <input type="hidden" name="stationId" value="@s["stationId"]" />
-                                    <input type="hidden" name="isActive" value="@active" />
-                                    <input type="hidden" name="activeBookings" value="@activeBookings" />
-                                    <button class="btn btn-sm @(active ? "btn-outline-danger" : "btn-outline-success")"
-                                    @(activeBookings > 0 && active ? "disabled" : "")>
-                                        @(active ? "Deactivate" : "Activate")
+                                    <input type="hidden" name="id" value="@s["id"]" />
+                                    <button type="submit"
+                                            name="isActive"
+                                            value="@(isActive.ToString().ToLower())"
+                                            class="btn btn-sm @(isActive ? "btn-outline-danger" : "btn-outline-success")">
+                                        @(isActive ? "Deactivate" : "Activate")
                                     </button>
                                 </form>
 
-                                <!-- Delete -->
+
+                                <!-- Delete (acts as soft delete = deactivate) -->
                                 <form asp-action="Delete" method="post" class="d-inline">
-                                    <input type="hidden" name="stationId" value="@s["stationId"]" />
+                                    <input type="hidden" name="id" value="@s["id"]" />
                                     <button class="btn btn-danger btn-sm">Delete</button>
                                 </form>
                             </div>

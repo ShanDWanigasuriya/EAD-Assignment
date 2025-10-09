@@ -1,113 +1,163 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using EVWebApp.Services;
+using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
 
 namespace EVWebApp.Controllers
 {
     public class StationController : Controller
     {
-        // 🔹 Simulated in-memory data (replace with API later)
-        private static JArray stations = JArray.Parse(@"[
-            { 'stationId': 'S001', 'name': 'Colombo SuperCharge', 'location': 'Colombo 07', 'type':'AC', 'slots':4, 'isActive': true, 'activeBookings': 2 },
-            { 'stationId': 'S002', 'name': 'Galle RapidCharge', 'location': 'Galle', 'type':'DC', 'slots':3, 'isActive': true, 'activeBookings': 0 },
-            { 'stationId': 'S003', 'name': 'Kandy GreenCharge', 'location': 'Kandy', 'type':'AC', 'slots':5, 'isActive': false, 'activeBookings': 0 }
-        ]");
+        private readonly ApiClient _api;
+        public StationController(ApiClient api) => _api = api;
 
-        public IActionResult Index()
+        // List with computed ActiveBookings + AvailableNow
+        public async Task<IActionResult> Index()
         {
-            return View(stations);
+            var stations = await _api.Get<JArray>("/api/stations") ?? new JArray();
+            var list = new JArray();
+            var now = DateTime.UtcNow;
+
+            foreach (JObject s in stations)
+            {
+                var id = (string?)s["id"] ?? "";
+
+                // Active bookings for this station
+                var bookings = await _api.Get<JArray>($"/api/bookings/station/{id}") ?? new JArray();
+                var activeBookings = bookings.Count(b =>
+                {
+                    var st = (string?)b["status"];
+                    return st == "Pending" || st == "Approved";
+                });
+                s["activeBookings"] = activeBookings;
+
+                // Available slots NOW (from availability window) – fallback to total slots
+                int totalSlots = (int?)s["slots"] ?? 0;
+                int availableNow = totalSlots;
+
+                var win = ((JArray?)s["availability"])?
+                    .FirstOrDefault(w =>
+                    {
+                        var start = DateTime.Parse((string)w["startUtc"]);
+                        var end = DateTime.Parse((string)w["endUtc"]);
+                        return start <= now && now <= end;
+                    }) as JObject;
+
+                if (win != null)
+                    availableNow = (int?)win["availableSlots"] ?? totalSlots;
+
+                s["availableNow"] = availableNow;
+
+                // Compute human-readable displayLocation
+                var loc = s["location"];
+                if (loc != null && loc.HasValues)
+                {
+                    double lat = (double?)loc["lat"] ?? 0;
+                    double lng = (double?)loc["lng"] ?? 0;
+
+                    if (Math.Abs(lat - 6.9271) < 0.001 && Math.Abs(lng - 79.8612) < 0.001)
+                        s["displayLocation"] = "Colombo";
+                    else if (Math.Abs(lat - 6.0535) < 0.001 && Math.Abs(lng - 80.2210) < 0.001)
+                        s["displayLocation"] = "Galle";
+                    else if (Math.Abs(lat - 7.2906) < 0.001 && Math.Abs(lng - 80.6337) < 0.001)
+                        s["displayLocation"] = "Kandy";
+                    else
+                        s["displayLocation"] = $"{lat}, {lng}";
+                }
+                else
+                {
+                    s["displayLocation"] = "Unknown";
+                }
+
+                list.Add(s);
+            }
+
+            return View(list);
         }
 
-        // ✅ CREATE
+        // Create (let API generate id)
         [HttpPost]
-        public IActionResult Add(string stationId, string name, string location, string type, int slots)
+        public async Task<IActionResult> Add(string name, string location, string type, int slots)
         {
-            if (string.IsNullOrWhiteSpace(stationId) ||
-                string.IsNullOrWhiteSpace(name) ||
-                string.IsNullOrWhiteSpace(location) ||
-                string.IsNullOrWhiteSpace(type) ||
-                slots < 1)
+            var body = new
             {
-                TempData["Message"] = "⚠️ Please fill all fields correctly.";
-                return RedirectToAction("Index");
-            }
-
-            // Check duplicate ID
-            if (stations.Any(s => s["stationId"]!.ToString() == stationId))
-            {
-                TempData["Message"] = $"⚠️ Station ID {stationId} already exists!";
-                return RedirectToAction("Index");
-            }
-
-            var newStation = new JObject
-            {
-                ["stationId"] = stationId,
-                ["name"] = name,
-                ["location"] = location,
-                ["type"] = type,
-                ["slots"] = slots,
-                ["isActive"] = true,
-                ["activeBookings"] = 0
+                name,
+                type,
+                slots,
+                isActive = true,
+                location = GetCoordinates(location) // accepts {"lat":..., "lng":...}
             };
-            stations.Add(newStation);
-            TempData["Message"] = $"✅ Station {name} added successfully (simulated)";
+
+            var res = await _api.Post("/api/stations", body);
+            TempData[res.IsSuccessStatusCode ? "Success" : "Error"] =
+                res.IsSuccessStatusCode ? "Station created." : "Failed to create station.";
             return RedirectToAction("Index");
         }
 
-        // ✅ UPDATE
+        // Update (PUT /api/stations/{id})
         [HttpPost]
-        public IActionResult Update(string stationId, string name, string location, string type, int slots)
+        public async Task<IActionResult> Update(string id, string name, string location, string type, int slots)
         {
-            var station = stations.FirstOrDefault(s => s["stationId"]!.ToString() == stationId);
-            if (station == null)
+            var res = await _api.Put($"/api/stations/{id}", new
             {
-                TempData["Message"] = $"❌ Station {stationId} not found!";
-                return RedirectToAction("Index");
-            }
+                name,
+                type,
+                slots,
+                // keep current active state on server; we send only fields we edit
+                location = ParseGeo(location)
+            });
 
-            station["name"] = name;
-            station["location"] = location;
-            station["type"] = type;
-            station["slots"] = slots;
-
-            TempData["Message"] = $"✅ Station {stationId} updated successfully (simulated)";
+            TempData[res.IsSuccessStatusCode ? "Success" : "Error"] =
+                res.IsSuccessStatusCode ? "Station updated." : "Failed to update station.";
             return RedirectToAction("Index");
         }
 
-        // ✅ DELETE
+        // Activate / Deactivate
         [HttpPost]
-        public IActionResult Delete(string stationId)
+        public async Task<IActionResult> ToggleStatus(string id, bool isActive)
         {
-            var station = stations.FirstOrDefault(s => s["stationId"]!.ToString() == stationId);
-            if (station != null)
-            {
-                stations.Remove(station);
-                TempData["Message"] = $"🗑️ Station {stationId} deleted successfully (simulated)";
-            }
+            var url = isActive
+                ? $"/api/stations/{id}/deactivate"
+                : $"/api/stations/{id}/activate";
+
+            var res = await _api.Patch(url, new { });
+            TempData[res.IsSuccessStatusCode ? "Success" : "Error"] =
+                res.IsSuccessStatusCode ? "Status changed."
+                                        : "Cannot change status (active bookings may exist).";
             return RedirectToAction("Index");
         }
 
-        // ✅ ACTIVATE / DEACTIVATE
+        // If you really want a red “Delete”, make it a soft delete -> deactivate:
         [HttpPost]
-        public IActionResult ToggleStatus(string stationId, bool isActive, int activeBookings)
+        public async Task<IActionResult> Delete(string id)
         {
-            var station = stations.FirstOrDefault(s => s["stationId"]!.ToString() == stationId);
-            if (station == null)
-            {
-                TempData["Message"] = $"❌ Station not found!";
-                return RedirectToAction("Index");
-            }
-
-            if (activeBookings > 0 && isActive)
-            {
-                TempData["Message"] = $"❌ Cannot deactivate {stationId} — active bookings exist!";
-                return RedirectToAction("Index");
-            }
-
-            station["isActive"] = !isActive;
-            TempData["Message"] = !isActive
-                ? $"✅ Station {stationId} activated successfully (simulated)"
-                : $"✅ Station {stationId} deactivated successfully (simulated)";
+            var res = await _api.Patch($"/api/stations/{id}/deactivate", new { });
+            TempData[res.IsSuccessStatusCode ? "Success" : "Error"] =
+                res.IsSuccessStatusCode ? "Station deactivated." : "Failed to deactivate station.";
             return RedirectToAction("Index");
+        }
+
+        private object ParseGeo(string value)
+        {
+            try
+            {
+                var j = JObject.Parse(value);
+                return new { lat = (double?)j["lat"] ?? 0d, lng = (double?)j["lng"] ?? 0d };
+            }
+            catch
+            {
+                return new { lat = 0d, lng = 0d };
+            }
+        }
+        private object GetCoordinates(string city)
+        {
+            city = city.ToLowerInvariant();
+
+            return city switch
+            {
+                "colombo" => new { lat = 6.9271, lng = 79.8612 },
+                "galle" => new { lat = 6.0535, lng = 80.2210 },
+                "kandy" => new { lat = 7.2906, lng = 80.6337 },
+                _ => new { lat = 0.0, lng = 0.0 }
+            };
         }
     }
 }

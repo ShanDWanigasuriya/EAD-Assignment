@@ -1,4 +1,5 @@
-﻿@{
+﻿@using Newtonsoft.Json.Linq
+@{
     ViewData["Title"] = "Bookings";
 }
 
@@ -14,21 +15,23 @@
             <div class="alert alert-info">@TempData["Message"]</div>
         }
 
+        <!-- 🟩 CREATE NEW BOOKING -->
         <h5 class="mb-3">Create New Booking</h5>
         <form asp-action="Create" method="post" class="row g-3 mb-4">
             <div class="col-md-4">
                 <label class="form-label fw-bold">Station</label>
                 <select class="form-select" name="station" required>
                     <option value="">-- Select Station --</option>
-                    <option>Colombo SuperCharge</option>
-                    <option>Galle RapidCharge</option>
-                    <option>Kandy GreenCharge</option>
+                    @foreach (var s in ViewBag.Stations)
+                    {
+                        <option value="@s["id"]">@s["name"]</option>
+                    }
                 </select>
             </div>
 
             <div class="col-md-4">
-                <label class="form-label fw-bold">Vehicle No</label>
-                <input type="text" name="vehicleNo" class="form-control" placeholder="ABC-1234" required />
+                <label class="form-label fw-bold">Owner NIC</label>
+                <input type="text" name="ownerNic" class="form-control" placeholder="Enter NIC" required />
             </div>
 
             <div class="col-md-2">
@@ -48,60 +51,86 @@
 
         <hr />
 
+        <!-- 🟦 EXISTING BOOKINGS -->
         <h5 class="mb-3">Existing Bookings</h5>
         <table class="table table-striped align-middle">
             <thead class="table-dark">
                 <tr>
                     <th>ID</th>
                     <th>Station</th>
-                    <th>Vehicle</th>
+                    <th>Owner NIC</th>
                     <th>Date</th>
                     <th>Time</th>
+                    <th>Status</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach (var booking in Model)
+                @if (Model.Count == 0)
                 {
-                    var bookingDateTime = DateTime.Parse($"{booking["date"]} {booking["time"]}");
-                    bool canModify = (bookingDateTime - DateTime.Now).TotalHours >= 12;
-
                     <tr>
-                        <td>@booking["bookingId"]</td>
-                        <td>@booking["stationName"]</td>
-                        <td>@booking["vehicleNo"]</td>
-                        <td>@booking["date"]</td>
-                        <td>@booking["time"]</td>
-                        <td>
-                            <button class="btn btn-sm btn-success"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#editModal"
-                                    data-id="@booking["bookingId"]"
-                                    data-station="@booking["stationName"]"
-                                    data-vehicle="@booking["vehicleNo"]"
-                                    data-date="@booking["date"]"
-                                    data-time="@booking["time"]"
-                            @(canModify ? "" : "disabled")>
-                                Update
-                            </button>
-
-                            <form asp-action="Cancel" method="post" class="d-inline">
-                                <input type="hidden" name="bookingId" value="@booking["bookingId"]" />
-                                <input type="hidden" name="date" value="@booking["date"]" />
-                                <input type="hidden" name="time" value="@booking["time"]" />
-                                <button class="btn btn-sm btn-danger" @(canModify ? "" : "disabled")>
-                                    Cancel
-                                </button>
-                            </form>
-                        </td>
+                        <td colspan="7" class="text-center text-muted">No bookings found.</td>
                     </tr>
+                }
+                else
+                {
+                    @foreach (JObject booking in (JArray)Model)
+                    {
+                        DateTime startUtc = DateTime.Parse(booking["reservationStartUtc"]?.ToString() ?? DateTime.MinValue.ToString());
+                        var bookingDateTime = startUtc.ToLocalTime();
+                        bool canModify = (bookingDateTime - DateTime.Now).TotalHours >= 12;
+                        string status = booking["status"]?.ToString() ?? "Pending";
+
+                        <tr>
+                            <td>@booking["id"]</td>
+                            <td>@booking["stationName"]</td>
+                            <td>@booking["ownerNic"]</td>
+                            <td>@bookingDateTime.ToString("yyyy-MM-dd")</td>
+                            <td>@bookingDateTime.ToString("HH:mm")</td>
+                            <td>
+                                @if (status == "Cancelled")
+                                {
+                                    <span class="badge bg-danger">Cancelled</span>
+                                }
+                                else if (status == "Approved")
+                                {
+                                    <span class="badge bg-success">Approved</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning text-dark">Pending</span>
+                                }
+                            </td>
+                            <td>
+                                <button type="button"
+                                        class="btn btn-sm btn-success"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#editModal"
+                                        data-id="@booking["id"]"
+                                        data-station="@booking["stationName"]"
+                                        data-owner="@booking["ownerNic"]"
+                                        data-date="@bookingDateTime.ToString("yyyy-MM-dd")"
+                                        data-time="@bookingDateTime.ToString("HH:mm")"
+                                        @(canModify ? "" : "disabled")>
+                                    Update
+                                </button>
+
+                                <form asp-action="Cancel" method="post" class="d-inline">
+                                    <input type="hidden" name="bookingId" value="@booking["id"]" />
+                                    <button class="btn btn-sm btn-danger" @(canModify ? "" : "disabled")>
+                                        Cancel
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
                 }
             </tbody>
         </table>
     </div>
 </div>
 
-<!-- 🔹 Edit Booking Modal -->
+<!-- 🟪 EDIT BOOKING MODAL -->
 <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -116,12 +145,12 @@
 
                     <div class="mb-3">
                         <label class="form-label fw-bold">Station</label>
-                        <input type="text" id="editStation" name="station" class="form-control" readonly />
+                        <input type="text" id="editStation" class="form-control" readonly />
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Vehicle No</label>
-                        <input type="text" id="editVehicleNo" name="vehicleNo" class="form-control" required />
+                        <label class="form-label fw-bold">Owner NIC</label>
+                        <input type="text" id="editOwnerNic" name="ownerNic" class="form-control" readonly />
                     </div>
 
                     <div class="mb-3">
@@ -150,17 +179,11 @@
         editModal.addEventListener('show.bs.modal', event => {
             const button = event.relatedTarget;
 
-            const id = button.getAttribute('data-id');
-            const station = button.getAttribute('data-station');
-            const vehicle = button.getAttribute('data-vehicle');
-            const date = button.getAttribute('data-date');
-            const time = button.getAttribute('data-time');
-
-            document.getElementById('editBookingId').value = id;
-            document.getElementById('editStation').value = station;
-            document.getElementById('editVehicleNo').value = vehicle;
-            document.getElementById('editDate').value = date;
-            document.getElementById('editTime').value = time;
+            document.getElementById('editBookingId').value = button.getAttribute('data-id');
+            document.getElementById('editStation').value = button.getAttribute('data-station');
+            document.getElementById('editOwnerNic').value = button.getAttribute('data-owner');
+            document.getElementById('editDate').value = button.getAttribute('data-date');
+            document.getElementById('editTime').value = button.getAttribute('data-time');
         });
     </script>
 }
