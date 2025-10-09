@@ -1,0 +1,26 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:padding="24dp"
+    android:layout_width="match_parent" android:layout_height="match_parent">
+
+    <EditText
+        android:id="@+id/etNic"
+        android:hint="Enter NIC"
+        android:inputType="text"
+        android:layout_width="match_parent" android:layout_height="wrap_content"/>
+
+    <Button
+        android:id="@+id/btnLogin"
+        android:text="Login (Owner)"
+        android:layout_width="match_parent" android:layout_height="wrap_content"/>
+
+    <Button
+        android:id="@+id/btnRegister"
+        android:text="Register New Owner"
+        android:layout_width="match_parent" android:layout_height="wrap_content"/>
+
+    <Button
+        android:id="@+id/btnOperator"
+        android:text="Operator Login"
+        android:layout_width="match_parent" android:layout_height="wrap_content"/>
+
+</LinearLayout>

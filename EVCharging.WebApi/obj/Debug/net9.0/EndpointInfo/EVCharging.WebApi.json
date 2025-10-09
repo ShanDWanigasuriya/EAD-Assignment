@@ -296,6 +296,26 @@
             "description": "OK"
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "Owners"
+        ],
+        "parameters": [
+          {
+            "name": "nic",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
       }
     },
     "/api/owners/{nic}/deactivate": {

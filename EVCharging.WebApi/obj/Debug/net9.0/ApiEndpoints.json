@@ -165,6 +165,22 @@
   },
   {
     "ContainingType": "EVCharging.WebApi.Controllers.OwnersController",
+    "Method": "Delete",
+    "RelativePath": "api/owners/{nic}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "nic",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EVCharging.WebApi.Controllers.OwnersController",
     "Method": "Activate",
     "RelativePath": "api/owners/{nic}/activate",
     "HttpMethod": "PATCH",

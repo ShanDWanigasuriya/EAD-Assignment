@@ -8,10 +8,12 @@ namespace EVCharging.WebApi.Domain
         [BsonId, BsonRepresentation(BsonType.ObjectId)]
         public string Id { get; set; } = string.Empty;
 
+        [BsonElement("NIC")]
+        [BsonRequired]
         public string NIC { get; set; } = string.Empty;   // unique logical key
         public string FullName { get; set; } = string.Empty;
-        public string Email { get; set; } = "";
-        public string Phone { get; set; } = "";
+        public string Email { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;        // deactivate self; reactivate by Backoffice
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
