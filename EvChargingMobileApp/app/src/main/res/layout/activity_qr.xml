@@ -1,0 +1,8 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:gravity="center" android:padding="24dp"
+    android:layout_width="match_parent" android:layout_height="match_parent">
+
+    <ImageView android:id="@+id/imgQr" android:layout_width="300dp" android:layout_height="300dp"/>
+    <TextView android:id="@+id/tvHint" android:text="Show this QR to station operator"
+        android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+</LinearLayout>
