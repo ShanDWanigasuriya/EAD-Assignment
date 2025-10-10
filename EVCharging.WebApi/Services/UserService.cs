@@ -54,5 +54,14 @@ namespace EVCharging.WebApi.Services
         public Task<List<User>> GetAllAsync() => _repo.GetAllAsync();
 
         public Task SetActiveAsync(string id, bool active) => _repo.UpdateActiveAsync(id, active);
+
+        // Delete user (Backoffice only)
+        public async Task DeleteAsync(string id)
+        {
+            var user = await _repo.FindByIdAsync(id)
+                ?? throw new KeyNotFoundException("User not found.");
+
+            await _repo.DeleteUserAsync(id);
+        }
     }
 }

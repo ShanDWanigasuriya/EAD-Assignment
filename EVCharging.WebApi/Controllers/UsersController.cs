@@ -55,6 +55,15 @@ namespace EVCharging.WebApi.Controllers
         [HttpPatch("{id}/deactivate")]
         public async Task<IActionResult> Deactivate(string id) { await _users.SetActiveAsync(id, false); return Ok(); }
 
+        // Delete user
+        [Authorize(Roles = "Backoffice")]
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(string id)
+        {
+            await _users.DeleteAsync(id);
+            return Ok(new { message = "User deleted successfully." });
+        }
+
     }
 
     public record CreateUserRequest(string Username, string Password, string? Role);

@@ -13,7 +13,6 @@ namespace EVCharging.WebApi.Infrastructure.Repositories
         public Task<User?> FindByIdAsync(string id) =>
             Col.Find(x => x.Id == id).FirstOrDefaultAsync();
 
-
         public Task CreateAsync(User user) => Col.InsertOneAsync(user);
 
         // Update existing user info (username, role, password)
@@ -31,5 +30,9 @@ namespace EVCharging.WebApi.Infrastructure.Repositories
 
         public Task UpdateActiveAsync(string id, bool active) =>
             Col.UpdateOneAsync(x => x.Id == id, Builders<User>.Update.Set(u => u.IsActive, active));
+
+        // Delete user by ID
+        public Task DeleteUserAsync(string id) =>
+            Col.DeleteOneAsync(x => x.Id == id);
     }
 }
