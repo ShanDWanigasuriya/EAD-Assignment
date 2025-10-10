@@ -28,7 +28,9 @@ namespace EVCharging.WebApi.Services
             var station = await _stations.FindByIdAsync(stationId) ?? throw new KeyNotFoundException("Station not found.");
             if (!station.IsActive) throw new InvalidOperationException("Station inactive.");
 
-            // TODO: Optional slot capacity checks against station.Availability windows
+            // Reserve capacity atomically (only if a window fully covers [start,end] and has slots)
+            var reserved = await _stations.TryReserveSlotAsync(stationId, startUtc, endUtc);
+            if (!reserved) throw new InvalidOperationException("No capacity in the selected time window.");
 
             var booking = new Booking
             {
@@ -36,12 +38,23 @@ namespace EVCharging.WebApi.Services
                 StationId = stationId,
                 ReservationStartUtc = startUtc,
                 ReservationEndUtc = endUtc,
-                Status = "Pending"
+                Status = "Pending",
+                CreatedAtUtc = nowUtc
             };
 
-            await _bookings.CreateAsync(booking);
-            return booking.Id;
+            try
+            {
+                await _bookings.CreateAsync(booking);
+                return booking.Id;
+            }
+            catch
+            {
+                // Rollback capacity if DB insert fails
+                await _stations.ReleaseSlotAsync(stationId, startUtc, endUtc);
+                throw;
+            }
         }
+
 
         public async Task UpdateAsync(string id, DateTime newStartUtc, DateTime newEndUtc, DateTime nowUtc)
         {
@@ -49,10 +62,25 @@ namespace EVCharging.WebApi.Services
             if (!DateRules.IsAtLeast12HoursBefore(b.ReservationStartUtc, nowUtc))
                 throw new InvalidOperationException("Updates allowed only >= 12 hours before.");
 
-            b.ReservationStartUtc = newStartUtc;
-            b.ReservationEndUtc = newEndUtc;
-            b.UpdatedAtUtc = nowUtc;
-            await _bookings.UpdateAsync(b);
+            // Reserve new window first
+            var reserved = await _stations.TryReserveSlotAsync(b.StationId, newStartUtc, newEndUtc);
+            if (!reserved) throw new InvalidOperationException("No capacity in the selected new window.");
+
+            try
+            {
+                // Release old window and save new times
+                await _stations.ReleaseSlotAsync(b.StationId, b.ReservationStartUtc, b.ReservationEndUtc);
+                b.ReservationStartUtc = newStartUtc;
+                b.ReservationEndUtc = newEndUtc;
+                b.UpdatedAtUtc = nowUtc;
+                await _bookings.UpdateAsync(b);
+            }
+            catch
+            {
+                // If anything fails after reserving new, release it to avoid leaks
+                await _stations.ReleaseSlotAsync(b.StationId, newStartUtc, newEndUtc);
+                throw;
+            }
         }
 
         public async Task CancelAsync(string id, DateTime nowUtc)
@@ -60,6 +88,10 @@ namespace EVCharging.WebApi.Services
             var b = await _bookings.GetByIdAsync(id) ?? throw new KeyNotFoundException("Booking not found.");
             if (!DateRules.IsAtLeast12HoursBefore(b.ReservationStartUtc, nowUtc))
                 throw new InvalidOperationException("Cancel allowed only >= 12 hours before.");
+
+            // Release capacity back to the window
+            await _stations.ReleaseSlotAsync(b.StationId, b.ReservationStartUtc, b.ReservationEndUtc);
+
             b.Status = "Cancelled";
             b.UpdatedAtUtc = nowUtc;
             await _bookings.UpdateAsync(b);

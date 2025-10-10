@@ -56,5 +56,14 @@ namespace EVCharging.WebApi.Services
             }
             await _stations.UpdateActiveAsync(id, active);
         }
+
+        public Task<List<StationSlotWindow>> GetAvailabilityAsync(string stationId, DateTime fromUtc, DateTime toUtc)
+    => _stations.GetAvailabilityAsync(stationId, fromUtc, toUtc);
+
+        public Task<bool> TryReserveSlotAsync(string stationId, DateTime startUtc, DateTime endUtc)
+            => _stations.TryReserveSlotAsync(stationId, startUtc, endUtc);
+
+        public Task<bool> ReleaseSlotAsync(string stationId, DateTime startUtc, DateTime endUtc)
+            => _stations.ReleaseSlotAsync(stationId, startUtc, endUtc);
     }
 }

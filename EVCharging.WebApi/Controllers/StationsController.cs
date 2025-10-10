@@ -53,5 +53,15 @@ namespace EVCharging.WebApi.Controllers
             await _stations.SetActiveAsync(id, false);  // will throw if active bookings exist
             return Ok();
         }
+
+        [AllowAnonymous]
+        [HttpGet("{id}/availability")]
+        public async Task<IActionResult> Availability(string id, [FromQuery] DateTime? fromUtc, [FromQuery] DateTime? toUtc)
+        {
+            var from = fromUtc ?? DateTime.UtcNow.Date;
+            var to = toUtc ?? DateTime.UtcNow.Date.AddDays(7);
+            var windows = await _stations.GetAvailabilityAsync(id, from, to);
+            return Ok(windows);
+        }
     }
 }
