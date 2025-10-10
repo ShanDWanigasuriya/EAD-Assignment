@@ -16,9 +16,34 @@ namespace EVCharging.WebApi.Services
 
         public Task CreateAsync(Station s) => _stations.CreateAsync(s);
         public Task<List<Station>> GetAllAsync() => _stations.GetAllAsync();
-        public Task<Station?> GetByIdAsync(string id) => _stations.GetByIdAsync(id);
+        public Task<Station?> GetByIdAsync(string id) => _stations.FindByIdAsync(id);
 
-        public Task UpdateAsync(Station s) => _stations.ReplaceAsync(s);
+        public async Task UpdateAsync(string id, Station updated)
+        {
+            var existing = await _stations.FindByIdAsync(id)
+                ?? throw new KeyNotFoundException($"Station with ID {id} not found.");
+
+            // Merge fields — only replace if new values provided
+            var merged = new Station
+            {
+                Id = existing.Id,
+                Name = !string.IsNullOrWhiteSpace(updated.Name) ? updated.Name : existing.Name,
+                Type = (!string.IsNullOrWhiteSpace(updated.Type) && updated.Type != "AC")
+               ? updated.Type
+               : existing.Type,
+                Slots = updated.Slots != 0 ? updated.Slots : existing.Slots,
+                IsActive = existing.IsActive,
+                Location = (updated.Location != null &&
+                    (updated.Location.Lat != 0 || updated.Location.Lng != 0))
+                   ? updated.Location
+                   : existing.Location,
+                Availability = (updated.Availability != null && updated.Availability.Any())
+                                ? updated.Availability
+                                : existing.Availability
+            };
+
+            await _stations.UpdateAsync(merged);
+        }
 
         public async Task SetActiveAsync(string id, bool active)
         {

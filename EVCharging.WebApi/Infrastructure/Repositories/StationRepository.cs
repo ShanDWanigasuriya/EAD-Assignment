@@ -9,10 +9,10 @@ namespace EVCharging.WebApi.Infrastructure.Repositories
 
         public Task CreateAsync(Station s) => Col.InsertOneAsync(s);
         public Task<List<Station>> GetAllAsync() => Col.Find(_ => true).ToListAsync();
-        public Task<Station?> GetByIdAsync(string id) =>
-            Col.Find(s => s.Id == id).FirstOrDefaultAsync();
+        public Task<Station?> FindByIdAsync(string id) =>
+        Col.Find(x => x.Id == id).FirstOrDefaultAsync();
 
-        public Task ReplaceAsync(Station s) =>
+        public Task UpdateAsync(Station s) =>
             Col.ReplaceOneAsync(x => x.Id == s.Id, s);
 
         public Task UpdateActiveAsync(string id, bool active) =>

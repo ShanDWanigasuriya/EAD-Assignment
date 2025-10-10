@@ -25,7 +25,7 @@ namespace EVCharging.WebApi.Services
             var owner = await _owners.FindByNicAsync(ownerNic) ?? throw new KeyNotFoundException("Owner not found.");
             if (!owner.IsActive) throw new InvalidOperationException("Owner is inactive.");
 
-            var station = await _stations.GetByIdAsync(stationId) ?? throw new KeyNotFoundException("Station not found.");
+            var station = await _stations.FindByIdAsync(stationId) ?? throw new KeyNotFoundException("Station not found.");
             if (!station.IsActive) throw new InvalidOperationException("Station inactive.");
 
             // TODO: Optional slot capacity checks against station.Availability windows

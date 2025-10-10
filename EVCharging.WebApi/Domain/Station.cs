@@ -9,8 +9,8 @@ namespace EVCharging.WebApi.Domain
         public string Id { get; set; } = string.Empty;
 
         public string Name { get; set; } = "";
-        public string Type { get; set; } = "AC";          // AC | DC
-        public int Slots { get; set; }                    // total concurrent slots
+        public string Type { get; set; } = "AC"; // AC | DC
+        public int Slots { get; set; } // total concurrent slots
         public bool IsActive { get; set; } = true;
 
         public Geo Location { get; set; } = new();

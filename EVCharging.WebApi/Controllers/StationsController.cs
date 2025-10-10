@@ -31,9 +31,15 @@ namespace EVCharging.WebApi.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(string id, [FromBody] Station s)
         {
-            s.Id = id;
-            await _stations.UpdateAsync(s);
-            return Ok(s);
+            try
+            {
+                await _stations.UpdateAsync(id, s);
+                return Ok(new { message = "Station updated successfully." });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { error = ex.Message });
+            }
         }
 
         [Authorize(Roles = "Backoffice")]

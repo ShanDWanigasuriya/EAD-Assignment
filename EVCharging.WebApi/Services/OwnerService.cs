@@ -28,12 +28,19 @@ namespace EVCharging.WebApi.Services
             var existing = await _owners.FindByNicAsync(nic)
                 ?? throw new KeyNotFoundException($"Owner with NIC {nic} not found.");
 
-            updated.Id = existing.Id;
-            updated.IsActive = existing.IsActive;
-            updated.NIC = existing.NIC;
-            updated.CreatedAt = existing.CreatedAt;
+            // Merge updated fields with existing
+            var merged = new Owner
+            {
+                Id = existing.Id,
+                NIC = existing.NIC,
+                FullName = !string.IsNullOrWhiteSpace(updated.FullName) ? updated.FullName : existing.FullName,
+                Email = !string.IsNullOrWhiteSpace(updated.Email) ? updated.Email : existing.Email,
+                Phone = !string.IsNullOrWhiteSpace(updated.Phone) ? updated.Phone : existing.Phone,
+                IsActive = existing.IsActive,
+                CreatedAt = existing.CreatedAt
+            };
 
-            await _owners.UpdateByNicAsync(nic, updated);
+            await _owners.UpdateByNicAsync(nic, merged);
         }
 
         // Deactivate / Reactivate

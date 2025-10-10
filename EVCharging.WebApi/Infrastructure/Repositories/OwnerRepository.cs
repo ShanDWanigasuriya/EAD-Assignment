@@ -29,8 +29,17 @@ namespace EVCharging.WebApi.Infrastructure.Repositories
             }
         }
 
-        public Task UpdateByNicAsync(string nic, Owner updated) =>
-            Col.ReplaceOneAsync(x => x.NIC == nic, updated);
+        public Task UpdateByNicAsync(string nic, Owner updated)
+        {
+            var updateDefinition = Builders<Owner>.Update.Combine(
+                Builders<Owner>.Update.Set(o => o.FullName, updated.FullName),
+                Builders<Owner>.Update.Set(o => o.Email, updated.Email),
+                Builders<Owner>.Update.Set(o => o.Phone, updated.Phone)
+            );
+
+            return Col.UpdateOneAsync(x => x.NIC == nic, updateDefinition);
+        }
+
         public Task<List<Owner>> GetAllAsync() => Col.Find(_ => true).ToListAsync();
 
         public Task UpdateActiveByNicAsync(string nic, bool active) =>
