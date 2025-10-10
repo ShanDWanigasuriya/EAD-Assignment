@@ -70,18 +70,35 @@ namespace EVCharging.WebApi.Services
 
         public async Task ApproveAsync(string id)
         {
-            var b = await _bookings.GetByIdAsync(id) ?? throw new KeyNotFoundException("Booking not found.");
+            var b = await _bookings.GetByIdAsync(id)
+                ?? throw new KeyNotFoundException("Booking not found.");
+
+            // Only allow approval if status is "Pending"
+            if (!string.Equals(b.Status, "Pending", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException($"Cannot approve booking with status '{b.Status}'. Only Pending bookings can be approved.");
+
+            // Proceed with approval
             b.Status = "Approved";
             b.QrPayload = QrCodeUtil.GeneratePngBase64($"{b.Id}|{b.OwnerNic}");
+            b.UpdatedAtUtc = DateTime.UtcNow;
+
             await _bookings.UpdateAsync(b);
         }
 
         public async Task CompleteAsync(string id)
         {
-            var b = await _bookings.GetByIdAsync(id) ?? throw new KeyNotFoundException("Booking not found.");
+            var b = await _bookings.GetByIdAsync(id)
+                ?? throw new KeyNotFoundException("Booking not found.");
+
+            // Only allow completion if status is "Approved"
+            if (!string.Equals(b.Status, "Approved", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException($"Cannot complete booking with status '{b.Status}'. Only Approved bookings can be completed.");
+
             b.Status = "Completed";
             b.UpdatedAtUtc = DateTime.UtcNow;
+
             await _bookings.UpdateAsync(b);
         }
+
     }
 }
