@@ -27,6 +27,30 @@ namespace EVCharging.WebApi.Services
             await _repo.CreateAsync(user);
         }
 
+        // Update user (Backoffice only)
+        public async Task UpdateAsync(string id, string? username, string? password, string? role)
+        {
+            var user = await _repo.FindByIdAsync(id)
+                ?? throw new KeyNotFoundException("User not found.");
+
+            if (!string.IsNullOrWhiteSpace(username))
+                user.Username = username;
+
+            if (!string.IsNullOrWhiteSpace(password))
+                user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(password);
+
+            if (!string.IsNullOrWhiteSpace(role))
+            {
+                var allowedRoles = new[] { "Backoffice", "StationOperator" };
+                if (!allowedRoles.Contains(role, StringComparer.OrdinalIgnoreCase))
+                    throw new InvalidOperationException("Invalid role. Allowed roles: Backoffice or StationOperator.");
+
+                user.Role = role;
+            }
+
+            await _repo.UpdateUserAsync(id, user);
+        }
+
         public Task<List<User>> GetAllAsync() => _repo.GetAllAsync();
 
         public Task SetActiveAsync(string id, bool active) => _repo.UpdateActiveAsync(id, active);

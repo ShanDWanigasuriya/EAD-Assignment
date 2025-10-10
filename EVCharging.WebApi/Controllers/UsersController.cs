@@ -22,6 +22,15 @@ namespace EVCharging.WebApi.Controllers
             return Ok(new { message = "User created." });
         }
 
+        // Update user
+        [Authorize(Roles = "Backoffice")]
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(string id, [FromBody] UpdateUserRequest req)
+        {
+            await _users.UpdateAsync(id, req.Username, req.Password, req.Role);
+            return Ok(new { message = "User updated successfully." });
+        }
+
         [Authorize(Roles = "Backoffice")]
         [HttpGet]
         public async Task<IActionResult> GetAll() => Ok(await _users.GetAllAsync());
@@ -45,8 +54,10 @@ namespace EVCharging.WebApi.Controllers
         [Authorize(Roles = "Backoffice")]
         [HttpPatch("{id}/deactivate")]
         public async Task<IActionResult> Deactivate(string id) { await _users.SetActiveAsync(id, false); return Ok(); }
+
     }
 
     public record CreateUserRequest(string Username, string Password, string? Role);
+    public record UpdateUserRequest(string? Username, string? Password, string? Role);
     public record LoginRequest(string Username, string Password);
 }
